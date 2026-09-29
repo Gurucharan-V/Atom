@@ -230,19 +230,19 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({
           {/* Target change diff */}
           {proposedAction.target_field && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5 text-[12px]">
-              <div className="p-2.5 bg-paper/60 rounded-control border border-rule">
-                <span className="text-ink-soft block font-mono text-[11px] mb-1">
-                  Field: {proposedAction.target_field} (Current)
+              <div className="p-3 rounded-control border border-rule diff-mismatch">
+                <span className="block font-mono text-[11px] font-semibold mb-1 opacity-80">
+                  Field: {proposedAction.target_field} (Current / Mismatch)
                 </span>
-                <span className="font-mono text-ink text-[12px]">
+                <span className="font-mono text-[13px] font-semibold">
                   {proposedAction.old_value}
                 </span>
               </div>
-              <div className="p-2.5 bg-white rounded-control border border-verified/40">
-                <span className="text-verified block font-mono text-[11px] mb-1">
-                  Proposed target update
+              <div className="p-3 rounded-control border border-verified/50 diff-match">
+                <span className="block font-mono text-[11px] font-semibold mb-1 opacity-80">
+                  Proposed Target Update (Verified)
                 </span>
-                <span className="font-mono font-semibold text-ink text-[12px]">
+                <span className="font-mono font-bold text-[13px]">
                   {proposedAction.new_value}
                 </span>
               </div>

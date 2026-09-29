@@ -3,12 +3,13 @@ import { ArrowUpDown, Search } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { OverlapMark } from '../components/common/OverlapMark';
 import { StatusTag } from '../components/common/StatusTag';
+import { SkeletonTableRow } from '../components/common/LoadingStates';
 
 type SortField = 'id' | 'vendor' | 'gap' | 'amount';
 type SortOrder = 'asc' | 'desc';
 
 export const CasesList: React.FC = () => {
-  const { cases, selectCase, loadSampleData, searchQuery, setSearchQuery } = useApp();
+  const { cases, selectCase, loadSampleData, searchQuery, setSearchQuery, isLoading } = useApp();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [sortField, setSortField] = useState<SortField>('gap');
@@ -195,10 +196,19 @@ export const CasesList: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-rule/60 text-[13px]">
-                {filteredCases.map((c) => {
-                  const isResolved = c.status === 'resolved' || c.gap === 0;
+                {isLoading ? (
+                  <>
+                    <SkeletonTableRow columns={8} />
+                    <SkeletonTableRow columns={8} />
+                    <SkeletonTableRow columns={8} />
+                    <SkeletonTableRow columns={8} />
+                    <SkeletonTableRow columns={8} />
+                  </>
+                ) : (
+                  filteredCases.map((c) => {
+                    const isResolved = c.status === 'resolved' || c.gap === 0;
 
-                  return (
+                    return (
                     <tr
                       key={c.id}
                       onClick={() => selectCase(c.id)}
@@ -238,8 +248,9 @@ export const CasesList: React.FC = () => {
                       </td>
                     </tr>
                   );
-                })}
-              </tbody>
+                })
+              )}
+            </tbody>
             </table>
           </div>
         )}

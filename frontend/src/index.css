@@ -34,9 +34,46 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Glassmorphism utility */
+.glass-header {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px -2px rgba(22, 32, 44, 0.04), 0 2px 6px -1px rgba(22, 32, 44, 0.02);
+}
+
+/* Interactive Card Elevation & Micro-transitions */
+.interactive-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.interactive-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -4px rgba(22, 32, 44, 0.08), 0 4px 12px -2px rgba(22, 32, 44, 0.04);
+}
+
+/* Field Difference Highlights */
+.diff-mismatch {
+  background-color: rgba(194, 55, 74, 0.08);
+  border-left: 3px solid #C2374A;
+  color: #9E1B2D;
+}
+
+.diff-match {
+  background-color: rgba(31, 138, 112, 0.08);
+  border-left: 3px solid #1F8A70;
+  color: #115E4C;
+}
+
 /* Dark trace tape custom scrollbar */
 .dark-tape-scroll::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 .dark-tape-scroll::-webkit-scrollbar-track {
   background: #111a24;
@@ -60,6 +97,18 @@ body {
   animation: nodePulse 0.4s ease-out 1;
 }
 
+/* Shimmer pulse loader */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
@@ -69,3 +118,4 @@ body {
     scroll-behavior: auto !important;
   }
 }
+

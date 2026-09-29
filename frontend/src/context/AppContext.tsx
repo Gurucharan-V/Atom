@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { Case, AuditRecord, TraceEvent } from '../types';
 import { INITIAL_CASES, INITIAL_AUDIT_LOGS } from '../data/mockData';
 import {
@@ -7,14 +7,15 @@ import {
   rejectActionApi,
   fetchAuditLogsApi,
   connectCaseTraceSse,
+  checkBackendHealth,
 } from '../services/api';
 
 type ActiveTab = 'dashboard' | 'cases' | 'case_detail' | 'approvals' | 'audit';
 
-interface ToastMessage {
+export interface ToastMessage {
   id: string;
   message: string;
-  type: 'verified' | 'escalated' | 'info';
+  type: 'verified' | 'escalated' | 'info' | 'error';
 }
 
 interface AppContextType {
@@ -39,6 +40,11 @@ interface AppContextType {
   isDemoRunning: boolean;
   loadSampleData: () => void;
   exportAuditReport: (caseId?: string) => void;
+  isLoading: boolean;
+  isBackendConnected: boolean;
+  refreshBackendData: () => Promise<void>;
+  removeToast: (id: string) => void;
+  addToast: (message: string, type?: 'verified' | 'escalated' | 'info' | 'error') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -51,29 +57,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isDemoRunning, setIsDemoRunning] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isBackendConnected, setIsBackendConnected] = useState<boolean>(false);
 
-  // Fetch backend data on mount if available
-  useEffect(() => {
-    async function initData() {
-      const apiCases = await fetchCasesApi();
-      if (apiCases && apiCases.length > 0) {
-        setCases(apiCases);
-      }
-      const apiAudits = await fetchAuditLogsApi();
-      if (apiAudits && apiAudits.length > 0) {
-        setAuditLogs(apiAudits);
-      }
-    }
-    initData();
-  }, []);
-
-  const addToast = (message: string, type: 'verified' | 'escalated' | 'info' = 'info') => {
-    const id = Date.now().toString();
+  const addToast = useCallback((message: string, type: 'verified' | 'escalated' | 'info' | 'error' = 'info') => {
+    const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
-  };
+    }, 4500);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const refreshBackendData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const health = await checkBackendHealth();
+      if (!health) {
+        setIsBackendConnected(false);
+        // Silently use local state without breaking UX
+        return;
+      }
+      setIsBackendConnected(true);
+
+      const [casesResult, auditResult] = await Promise.all([
+        fetchCasesApi(),
+        fetchAuditLogsApi(),
+      ]);
+
+      if (casesResult.data && casesResult.data.length > 0) {
+        setCases(casesResult.data);
+      } else if (casesResult.error) {
+        addToast(`Cases API: ${casesResult.error}`, 'error');
+      }
+
+      if (auditResult.data && auditResult.data.length > 0) {
+        setAuditLogs(auditResult.data);
+      }
+    } catch (err: any) {
+      addToast(`Data sync failed: ${err?.message || 'Server error'}`, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [addToast]);
+
+  // Initial load
+  useEffect(() => {
+    refreshBackendData();
+  }, [refreshBackendData]);
 
   const selectedCase = cases.find((c) => c.id === selectedCaseId) || cases[0];
 
@@ -94,8 +128,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const approveAction = async (caseId: string) => {
+    const targetCase = cases.find((c) => c.id === caseId);
+    const actionTitle = targetCase?.proposed_action?.title || 'Action';
+
     // 1. Call backend API
-    await approveActionApi(caseId);
+    const apiResult = await approveActionApi(caseId);
+    if (!apiResult.success && apiResult.error) {
+      addToast(apiResult.error + ' (applied locally as fallback)', 'error');
+    }
 
     // 2. Optimistic UI update
     setCases((prev) =>
@@ -131,9 +171,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
 
     const nowStr = new Date().toLocaleTimeString('en-US', { hour12: false });
-    const targetCase = cases.find((c) => c.id === caseId);
-    const actionTitle = targetCase?.proposed_action?.title || 'Action';
-
     setAuditLogs((prev) => [
       {
         id: `aud-${Date.now()}`,
@@ -151,7 +188,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const rejectAction = async (caseId: string, reason: string) => {
-    await rejectActionApi(caseId, reason);
+    const apiResult = await rejectActionApi(caseId, reason);
+    if (!apiResult.success && apiResult.error) {
+      addToast(apiResult.error + ' (applied locally as fallback)', 'error');
+    }
 
     setCases((prev) =>
       prev.map((c) => {
@@ -259,7 +299,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveTab('case_detail');
     addToast('Running Eclipse Reconciler demo scenario...', 'info');
 
-    // Attempt SSE real-time stream connection from backend
     let receivedEvents = 0;
     const disconnectSse = connectCaseTraceSse(
       demoCaseId,
@@ -268,7 +307,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCases((prev) =>
           prev.map((c) => {
             if (c.id !== demoCaseId) return c;
-            // Append or replace trace
             const exists = c.trace.some((t) => t.id === event.id);
             return {
               ...c,
@@ -279,18 +317,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         );
       },
       () => {
-        // SSE complete or fallback
         if (receivedEvents === 0) {
-          // Fallback simulation if backend SSE didn't return steps
           runSimulatedTrace(demoCaseId);
         } else {
           setIsDemoRunning(false);
           addToast('Investigation finished. Awaiting your approval.', 'info');
         }
+      },
+      (_err) => {
+        // Fallback gracefully on SSE error without showing multiple alerts
+        if (receivedEvents === 0) {
+          runSimulatedTrace(demoCaseId);
+        }
       }
     );
 
-    // Timeout safety fallback
     setTimeout(() => {
       if (receivedEvents === 0) {
         disconnectSse();
@@ -437,6 +478,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isDemoRunning,
         loadSampleData,
         exportAuditReport,
+        isLoading,
+        isBackendConnected,
+        refreshBackendData,
+        removeToast,
+        addToast,
       }}
     >
       {children}
@@ -449,3 +495,4 @@ export const useApp = () => {
   if (!context) throw new Error('useApp must be used within an AppProvider');
   return context;
 };
+

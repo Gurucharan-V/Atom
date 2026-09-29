@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Download, ShieldCheck, Filter } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { SkeletonTableRow } from '../components/common/LoadingStates';
 
 export const AuditLog: React.FC = () => {
-  const { auditLogs, exportAuditReport, cases } = useApp();
+  const { auditLogs, exportAuditReport, cases, isLoading } = useApp();
   const [caseFilter, setCaseFilter] = useState<string>('all');
   const [stepFilter, setStepFilter] = useState<string>('all');
   const [actorFilter, setActorFilter] = useState<string>('all');
@@ -117,8 +118,16 @@ export const AuditLog: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-rule/60 text-[13px]">
-              {filteredLogs.map((log) => (
-                <tr key={log.id} className="h-[44px] hover:bg-[#F7F9FB] transition-colors">
+              {isLoading ? (
+                <>
+                  <SkeletonTableRow columns={5} />
+                  <SkeletonTableRow columns={5} />
+                  <SkeletonTableRow columns={5} />
+                  <SkeletonTableRow columns={5} />
+                </>
+              ) : (
+                filteredLogs.map((log) => (
+                  <tr key={log.id} className="h-[44px] hover:bg-[#F7F9FB] transition-colors">
                   <td className="pl-5 py-1.5 font-mono text-ink-soft text-[12px] whitespace-nowrap">
                     {log.time}
                   </td>
@@ -137,8 +146,9 @@ export const AuditLog: React.FC = () => {
                   <td className="pr-5 py-1.5 text-ink leading-relaxed">
                     {log.summary}
                   </td>
-                </tr>
-              ))}
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

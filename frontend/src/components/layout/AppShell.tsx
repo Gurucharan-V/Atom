@@ -23,6 +23,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     isDemoRunning,
     searchQuery,
     setSearchQuery,
+    isBackendConnected,
+    isLoading,
+    refreshBackendData,
   } = useApp();
 
   interface NavItem {
@@ -114,43 +117,81 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
-        {/* Top Header */}
-        <header className="h-[60px] bg-sheet border-b border-rule px-6 flex items-center justify-between sticky top-0 z-10">
+        {/* Top Header with Glassmorphism */}
+        <header className="h-[60px] glass-header border-b border-rule/80 px-6 flex items-center justify-between sticky top-0 z-10 transition-all">
           <div className="flex items-center gap-3">
-            <span className="font-bold text-[17px] text-ink tracking-tight font-ui">
+            <span className="font-bold text-[18px] text-ink tracking-tight font-ui flex items-center gap-2">
               Eclipse Reconciler
+              <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-ink/5 border border-ink/10 text-ink-soft">v1.0</span>
             </span>
-            <span className="text-ink-soft text-[13px] hidden sm:inline">
-              / Autonomous Transaction Mismatch Resolution
+            <span className="text-ink-soft text-[13px] hidden sm:inline border-l border-rule pl-3">
+              Autonomous Transaction Mismatch Agent
             </span>
           </div>
 
           <div className="flex items-center gap-3">
             {/* Live Search Input */}
-            <div className="relative hidden md:block">
-              <Search className="w-4 h-4 text-ink-soft absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="relative hidden md:block group">
+              <Search className="w-4 h-4 text-ink-soft absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none group-focus-within:text-pending transition-colors" />
               <input
                 type="text"
-                placeholder="Search cases or vendors..."
+                placeholder="Search cases, vendors or invoices..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-[34px] pl-8 pr-3 w-[220px] lg:w-[280px] bg-paper text-ink text-[12px] rounded-control border border-rule focus:outline-none focus:ring-1 focus:ring-pending placeholder:text-ink-soft/70"
+                className="h-[36px] pl-9 pr-3 w-[220px] lg:w-[280px] bg-paper text-ink text-[12px] rounded-control border border-rule focus:outline-none focus:ring-2 focus:ring-pending/30 focus:border-pending transition-all placeholder:text-ink-soft/70 shadow-sm"
               />
             </div>
 
-            <div className="hidden lg:flex items-center gap-2 text-[12px] text-ink-soft font-mono mr-1">
-              <span className="w-2 h-2 rounded-full bg-verified" />
-              <span>Safety policy active</span>
+            {/* Backend connection pill */}
+            <div
+              className={`hidden lg:flex items-center gap-2 text-[12px] font-mono px-3 py-1 rounded-full border transition-all ${
+                isBackendConnected
+                  ? 'bg-verified/10 border-verified/30 text-verified'
+                  : 'bg-corona/10 border-corona/30 text-corona'
+              }`}
+              title={isBackendConnected ? 'Backend API connected (http://127.0.0.1:8000)' : 'Standalone fallback mode active'}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isBackendConnected ? 'bg-verified animate-pulse' : 'bg-corona'
+                }`}
+              />
+              <span className="font-medium">
+                {isBackendConnected ? 'API Live' : 'Offline / Standalone'}
+              </span>
             </div>
+
+            {/* Refresh / Sync Button */}
+            <button
+              type="button"
+              onClick={() => refreshBackendData()}
+              disabled={isLoading}
+              title="Sync with backend API"
+              className="h-[36px] w-[36px] rounded-control border border-rule bg-sheet hover:bg-paper active:scale-95 text-ink-soft hover:text-ink flex items-center justify-center transition-all shadow-sm focus:outline-none disabled:opacity-50"
+            >
+              <svg
+                className={`w-4 h-4 ${isLoading ? 'animate-spin text-pending' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
 
             <button
               type="button"
               onClick={runDemo}
               disabled={isDemoRunning}
-              className="h-[34px] px-3.5 rounded-control bg-ink hover:bg-ink/90 text-white font-medium text-[13px] flex items-center gap-2 transition-colors focus:ring-2 focus:ring-pending focus:ring-offset-2 outline-none disabled:opacity-50"
+              className="h-[36px] px-4 rounded-control bg-ink hover:bg-ink/90 active:scale-95 text-white font-medium text-[13px] flex items-center gap-2 transition-all shadow-sm focus:ring-2 focus:ring-pending focus:ring-offset-2 outline-none disabled:opacity-50"
             >
-              <Play className={`w-3.5 h-3.5 ${isDemoRunning ? 'animate-spin' : ''}`} />
-              <span>{isDemoRunning ? 'Running...' : 'Run demo'}</span>
+              <Play className={`w-3.5 h-3.5 ${isDemoRunning ? 'animate-spin text-corona' : ''}`} />
+              <span>{isDemoRunning ? 'Running Trace...' : 'Run Demo'}</span>
             </button>
           </div>
         </header>
