@@ -1,0 +1,37 @@
+{
+  "scenario_id": "price_variance_04",
+  "case_id": "INV-18890",
+  "vendor": "CloudScale Infra Services",
+  "invoice": {
+    "invoice_id": "INV-18890",
+    "amount": 85000,
+    "currency": "INR",
+    "issue_date": "2026-08-25"
+  },
+  "purchase_order": {
+    "po_id": "PO-0994",
+    "authorized_amount": 70000,
+    "currency": "INR"
+  },
+  "supporting_emails": [
+    {
+      "email_id": "EML-319",
+      "from": "support@cloudscale.io",
+      "subject": "Discount voucher credit note for INV-18890",
+      "body": "Due to the delayed setup, we will issue a credit note for ₹15,000 against invoice INV-18890 to align with your original PO limit."
+    }
+  ],
+  "discrepancy": {
+    "type": "price_variance",
+    "gap": 15000,
+    "billed": 85000,
+    "paid": 85000
+  },
+  "expected_agent_output": {
+    "classification": "price_variance",
+    "confidence": 0.89,
+    "action": "credit_note",
+    "amount": 15000,
+    "requires_approval": true
+  }
+}

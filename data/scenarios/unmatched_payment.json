@@ -1,0 +1,33 @@
+{
+  "scenario_id": "unmatched_payment_05",
+  "case_id": "TXN-90211",
+  "vendor": "Apex Global Supplies",
+  "invoice": null,
+  "payments": [
+    {
+      "payment_id": "BANK-CR-90211",
+      "amount": 62000,
+      "currency": "INR",
+      "payment_date": "2026-09-27",
+      "narration": "RTGS Cr APX-DEP-991 BATCH 12"
+    }
+  ],
+  "discrepancy": {
+    "type": "unmatched",
+    "gap": 62000,
+    "billed": 0,
+    "paid": 62000
+  },
+  "expected_agent_output": {
+    "classification": "unmatched",
+    "confidence": 0.54,
+    "action": "escalate_to_human",
+    "requires_approval": false,
+    "failure_simulation": {
+      "tool": "ledger_tool",
+      "type": "timeout",
+      "retry_count": 1,
+      "recovered": true
+    }
+  }
+}

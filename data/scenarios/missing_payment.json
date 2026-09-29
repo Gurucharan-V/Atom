@@ -1,0 +1,25 @@
+{
+  "scenario_id": "missing_payment_03",
+  "case_id": "INV-21004",
+  "vendor": "Bharat Power & Electricals",
+  "invoice": {
+    "invoice_id": "INV-21004",
+    "amount": 120000,
+    "currency": "INR",
+    "issue_date": "2026-08-15",
+    "due_date": "2026-09-15"
+  },
+  "payments": [],
+  "discrepancy": {
+    "type": "missing",
+    "gap": 120000,
+    "billed": 120000,
+    "paid": 0
+  },
+  "expected_agent_output": {
+    "classification": "missing",
+    "confidence": 0.94,
+    "action": "vendor_reminder",
+    "requires_approval": false
+  }
+}

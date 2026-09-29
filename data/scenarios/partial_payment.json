@@ -1,0 +1,46 @@
+{
+  "scenario_id": "partial_payment_01",
+  "case_id": "INV-20418",
+  "vendor": "Acme Pvt Ltd",
+  "invoice": {
+    "invoice_id": "INV-20418",
+    "amount": 100000,
+    "currency": "INR",
+    "issue_date": "2026-09-01",
+    "due_date": "2026-10-01",
+    "line_items": [
+      { "item": "Enterprise Cloud & Hosting Services", "amount": 100000 }
+    ]
+  },
+  "payments": [
+    {
+      "payment_id": "HDFC-NEFT-88213",
+      "amount": 60000,
+      "currency": "INR",
+      "payment_date": "2026-09-04",
+      "narration": "INV-20418 INST1 OF 2 REF ACM-559"
+    }
+  ],
+  "discrepancy": {
+    "type": "partial",
+    "gap": 40000,
+    "billed": 100000,
+    "paid": 60000
+  },
+  "supporting_emails": [
+    {
+      "email_id": "EML-402",
+      "from": "rajesh.k@acmepvtltd.com",
+      "date": "2026-09-03",
+      "subject": "Re: Payment schedule for invoice INV-20418",
+      "body": "As agreed with your accounts lead, we are splitting invoice INV-20418 into two instalments: ₹60,000 immediately, and the remaining ₹40,000 by 3 October."
+    }
+  ],
+  "expected_agent_output": {
+    "classification": "partial",
+    "confidence": 0.91,
+    "action": "schedule_followup",
+    "requires_approval": true,
+    "target_date": "2026-10-03"
+  }
+}

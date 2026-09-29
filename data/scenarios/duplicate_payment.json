@@ -1,0 +1,40 @@
+{
+  "scenario_id": "duplicate_payment_02",
+  "case_id": "INV-19042",
+  "vendor": "LogiTech Solutions India",
+  "invoice": {
+    "invoice_id": "INV-19042",
+    "amount": 75000,
+    "currency": "INR",
+    "issue_date": "2026-09-08",
+    "due_date": "2026-09-22"
+  },
+  "payments": [
+    {
+      "payment_id": "ICICI-99120",
+      "amount": 75000,
+      "currency": "INR",
+      "payment_date": "2026-09-12",
+      "narration": "NEFT LogiTech Solutions India Ref INV-19042"
+    },
+    {
+      "payment_id": "AXIS-40112",
+      "amount": 75000,
+      "currency": "INR",
+      "payment_date": "2026-09-14",
+      "narration": "RTGS LogiTech Solutions India Ref INV-19042-RETRY"
+    }
+  ],
+  "discrepancy": {
+    "type": "duplicate",
+    "gap": 75000,
+    "billed": 75000,
+    "paid": 150000
+  },
+  "expected_agent_output": {
+    "classification": "duplicate",
+    "confidence": 0.98,
+    "action": "payment_hold",
+    "requires_approval": true
+  }
+}
