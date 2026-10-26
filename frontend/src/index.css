@@ -34,9 +34,9 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Glassmorphism utility */
+/* Header utility */
 .glass-header {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(242, 244, 247, 0.98);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }

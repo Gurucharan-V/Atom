@@ -117,8 +117,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
-        {/* Top Header with Glassmorphism */}
-        <header className="h-[60px] glass-header border-b border-rule/80 px-6 flex items-center justify-between sticky top-0 z-10 transition-all">
+        {/* Top Header */}
+        <header className="h-[60px] glass-header bg-paper/95 border-b border-rule/80 px-6 flex items-center justify-between sticky top-0 z-30 transition-all">
           <div className="flex items-center gap-3">
             <span className="font-bold text-[18px] text-ink tracking-tight font-ui flex items-center gap-2">
               Eclipse Reconciler
