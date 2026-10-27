@@ -24,12 +24,16 @@ class TraceEvent(BaseModel):
 
 class Evidence(BaseModel):
     id: str
-    source_type: Literal["invoice", "bank", "email", "po", "ledger"]
+    source_type: Literal["invoice", "bank", "email", "po", "ledger", "call", "whatsapp"]
     title: str
     ref_id: str
     snippet: str
     highlight: str
     date: Optional[str] = None
+    audio_url: Optional[str] = None
+    timestamp_seconds: Optional[int] = None
+    duration_text: Optional[str] = None
+    speaker: Optional[str] = None
 
 class ProposedAction(BaseModel):
     action_type: Literal[
@@ -55,11 +59,15 @@ class Case(BaseModel):
     currency: Literal["INR", "USD"] = "INR"
     status: CaseStatus = "open"
     confidence: float
+    prior_confidence: Optional[float] = None
+    confidence_reason: Optional[str] = None
     conclusion: str
     proposed_action: Optional[ProposedAction] = None
     evidence: List[Evidence] = Field(default_factory=list)
     trace: List[TraceEvent] = Field(default_factory=list)
     age: str = "Just now"
+    source_record: Optional[Dict[str, Any]] = None
+    matched_record: Optional[Dict[str, Any]] = None
 
 class AuditRecord(BaseModel):
     id: str

@@ -8,6 +8,7 @@ from .config import settings
 from .api.routes_cases import router as cases_router
 from .api.routes_approvals import router as approvals_router
 from .api.routes_audit import router as audit_router
+from .api.routes_ingest import router as ingest_router
 
 app = FastAPI(
     title="Eclipse Reconciler API",
@@ -27,6 +28,7 @@ app.add_middleware(
 app.include_router(cases_router)
 app.include_router(approvals_router)
 app.include_router(audit_router)
+app.include_router(ingest_router)
 
 @app.get("/health")
 def health_check():

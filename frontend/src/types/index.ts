@@ -24,7 +24,7 @@ export interface TraceEvent {
   duration_ms?: number;
 }
 
-export type EvidenceSourceType = 'invoice' | 'bank' | 'email' | 'po' | 'ledger';
+export type EvidenceSourceType = 'invoice' | 'bank' | 'email' | 'po' | 'ledger' | 'call' | 'whatsapp';
 
 export interface Evidence {
   id: string;
@@ -34,6 +34,10 @@ export interface Evidence {
   snippet: string;
   highlight: string;
   date?: string;
+  audio_url?: string;
+  timestamp_seconds?: number;
+  duration_text?: string;
+  speaker?: string;
 }
 
 export type ActionType =
@@ -84,11 +88,15 @@ export interface Case {
   currency: 'INR' | 'USD';
   status: CaseStatus;
   confidence: number;
+  prior_confidence?: number;
+  confidence_reason?: string;
   conclusion: string;
   proposed_action?: ProposedAction;
   evidence: Evidence[];
   trace: TraceEvent[];
   age: string;
+  source_record?: Record<string, any>;
+  matched_record?: Record<string, any>;
 }
 
 export interface AuditRecord {

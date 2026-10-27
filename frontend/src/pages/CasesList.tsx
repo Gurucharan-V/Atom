@@ -1,67 +1,90 @@
 import React, { useState } from 'react';
-import { ArrowUpDown, Search } from 'lucide-react';
+import { Search, ArrowUpDown, UploadCloud } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { OverlapMark } from '../components/common/OverlapMark';
 import { StatusTag } from '../components/common/StatusTag';
+import { ConfidenceBar } from '../components/common/ConfidenceBar';
 import { SkeletonTableRow } from '../components/common/LoadingStates';
-
-type SortField = 'id' | 'vendor' | 'gap' | 'amount';
-type SortOrder = 'asc' | 'desc';
+import { DocumentIngestModal } from '../components/common/DocumentIngestModal';
 
 export const CasesList: React.FC = () => {
-  const { cases, selectCase, loadSampleData, searchQuery, setSearchQuery, isLoading } = useApp();
+  const {
+    cases,
+    selectCase,
+    searchQuery,
+    setSearchQuery,
+    loadSampleData,
+    isLoading,
+  } = useApp();
+
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [sortField, setSortField] = useState<SortField>('gap');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [sortField, setSortField] = useState<'id' | 'vendor' | 'amount' | 'gap'>('id');
+  const [sortAsc, setSortAsc] = useState<boolean>(true);
+  const [isIngestModalOpen, setIsIngestModalOpen] = useState<boolean>(false);
 
-  const toggleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortOrder('desc');
-    }
-  };
-
+  // Filter cases based on search and button filters
   const filteredCases = cases
     .filter((c) => {
       if (statusFilter !== 'all' && c.status !== statusFilter) return false;
       if (typeFilter !== 'all' && c.mismatch_type !== typeFilter) return false;
       if (searchQuery.trim() !== '') {
-        const q = searchQuery.toLowerCase();
-        const matchId = c.id.toLowerCase().includes(q);
-        const matchVendor = c.vendor.toLowerCase().includes(q);
-        const matchType = c.mismatch_type.toLowerCase().includes(q);
-        if (!matchId && !matchVendor && !matchType) return false;
+        const query = searchQuery.toLowerCase();
+        return (
+          c.id.toLowerCase().includes(query) ||
+          c.vendor.toLowerCase().includes(query) ||
+          c.invoice_id.toLowerCase().includes(query) ||
+          c.conclusion.toLowerCase().includes(query)
+        );
       }
       return true;
     })
     .sort((a, b) => {
-      let result = 0;
-      if (sortField === 'gap') result = a.gap - b.gap;
-      else if (sortField === 'amount') result = a.invoice_amount - b.invoice_amount;
-      else if (sortField === 'vendor') result = a.vendor.localeCompare(b.vendor);
-      else if (sortField === 'id') result = a.id.localeCompare(b.id);
-      return sortOrder === 'asc' ? result : -result;
+      let comparison = 0;
+      if (sortField === 'id') comparison = a.id.localeCompare(b.id);
+      if (sortField === 'vendor') comparison = a.vendor.localeCompare(b.vendor);
+      if (sortField === 'amount') comparison = a.invoice_amount - b.invoice_amount;
+      if (sortField === 'gap') comparison = a.gap - b.gap;
+      return sortAsc ? comparison : -comparison;
     });
 
+  const toggleSort = (field: 'id' | 'vendor' | 'amount' | 'gap') => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortField(field);
+      setSortAsc(true);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Page Title & Filter Row */}
-      <div className="bg-sheet rounded-panel border border-rule p-5 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-4">
+      {/* Search and Filters Header */}
+      <div className="bg-sheet rounded-panel border border-rule p-4 space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <h1 className="text-[24px] font-bold text-ink tracking-tight">
+            <h1 className="text-[20px] font-bold text-ink tracking-tight">
               Reconciliation cases
             </h1>
             <p className="text-[13px] text-ink-soft">
-              Cross-system discrepancies identified between invoices, banks, POs, and the ledger.
+              Continuous monitoring across ERP accounts payable, banking clearing, correspondence, and voice audio.
             </p>
           </div>
-          <span className="font-mono text-[12px] text-ink-soft">
-            Showing {filteredCases.length} of {cases.length} cases
-          </span>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsIngestModalOpen(true)}
+              className="h-[34px] px-3.5 rounded-control bg-paper border border-rule hover:border-corona text-ink text-[12px] font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-corona" />
+              <span>Ingest document / audio</span>
+            </button>
+
+            <span className="font-mono text-[12px] text-ink-soft">
+              Showing {filteredCases.length} of {cases.length} cases
+            </span>
+          </div>
         </div>
 
         {/* Live Search bar for mobile / quick search */}
@@ -106,7 +129,7 @@ export const CasesList: React.FC = () => {
           {/* Type filters */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-ink-soft text-[12px] mr-1">Mismatch:</span>
-            {['all', 'partial', 'duplicate', 'missing', 'price_variance', 'unmatched'].map(
+            {['all', 'partial', 'duplicate', 'missing', 'price_variance', 'tax_fx', 'unmatched'].map(
               (tp) => (
                 <button
                   key={tp}
@@ -122,6 +145,8 @@ export const CasesList: React.FC = () => {
                     ? 'All'
                     : tp === 'price_variance'
                     ? 'Price variance'
+                    : tp === 'tax_fx'
+                    ? 'Tax / Forex (GST)'
                     : tp.charAt(0).toUpperCase() + tp.slice(1)}
                 </button>
               )
@@ -173,6 +198,7 @@ export const CasesList: React.FC = () => {
                     </div>
                   </th>
                   <th className="py-2 font-medium">Mismatch type</th>
+                  <th className="py-2 font-medium">Agent Confidence</th>
                   <th
                     className="py-2 font-medium text-right cursor-pointer hover:text-ink"
                     onClick={() => toggleSort('amount')}
@@ -198,63 +224,79 @@ export const CasesList: React.FC = () => {
               <tbody className="divide-y divide-rule/60 text-[13px]">
                 {isLoading ? (
                   <>
-                    <SkeletonTableRow columns={8} />
-                    <SkeletonTableRow columns={8} />
-                    <SkeletonTableRow columns={8} />
-                    <SkeletonTableRow columns={8} />
-                    <SkeletonTableRow columns={8} />
+                    <SkeletonTableRow columns={9} />
+                    <SkeletonTableRow columns={9} />
+                    <SkeletonTableRow columns={9} />
+                    <SkeletonTableRow columns={9} />
+                    <SkeletonTableRow columns={9} />
                   </>
                 ) : (
                   filteredCases.map((c) => {
                     const isResolved = c.status === 'resolved' || c.gap === 0;
 
                     return (
-                    <tr
-                      key={c.id}
-                      onClick={() => selectCase(c.id)}
-                      className="h-[44px] hover:bg-[#F7F9FB] cursor-pointer transition-colors"
-                    >
-                      <td className="pl-5 py-1">
-                        <OverlapMark size={24} gapAmount={c.gap} isResolved={isResolved} />
-                      </td>
-                      <td className="py-1 font-mono font-medium text-ink">
-                        {c.id}
-                      </td>
-                      <td className="py-1 text-ink font-medium max-w-[200px] truncate">
-                        {c.vendor}
-                      </td>
-                      <td className="py-1 text-ink-soft">
-                        {c.mismatch_type === 'partial'
-                          ? 'Partial payment'
-                          : c.mismatch_type === 'duplicate'
-                          ? 'Duplicate payment'
-                          : c.mismatch_type === 'missing'
-                          ? 'Missing payment'
-                          : c.mismatch_type === 'price_variance'
-                          ? 'Price variance'
-                          : 'Unmatched payment'}
-                      </td>
-                      <td className="py-1 text-right num text-ink-soft">
-                        ₹{c.invoice_amount.toLocaleString('en-IN')}
-                      </td>
-                      <td className="py-1 text-right num font-semibold text-ink">
-                        ₹{c.gap.toLocaleString('en-IN')}
-                      </td>
-                      <td className="py-1 pl-6">
-                        <StatusTag status={c.status} />
-                      </td>
-                      <td className="pr-5 py-1 text-right num text-ink-soft text-[12px]">
-                        {c.age}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
+                      <tr
+                        key={c.id}
+                        onClick={() => selectCase(c.id)}
+                        className="h-[46px] hover:bg-[#F7F9FB] cursor-pointer transition-colors"
+                      >
+                        <td className="pl-5 py-1">
+                          <OverlapMark size={24} gapAmount={c.gap} isResolved={isResolved} />
+                        </td>
+                        <td className="py-1 font-mono font-medium text-ink">
+                          {c.id}
+                        </td>
+                        <td className="py-1 text-ink font-medium max-w-[200px] truncate">
+                          {c.vendor}
+                        </td>
+                        <td className="py-1 text-ink-soft">
+                          {c.mismatch_type === 'partial'
+                            ? 'Partial payment'
+                            : c.mismatch_type === 'duplicate'
+                            ? 'Duplicate payment'
+                            : c.mismatch_type === 'missing'
+                            ? 'Missing payment'
+                            : c.mismatch_type === 'price_variance'
+                            ? 'Price variance'
+                            : c.mismatch_type === 'tax_fx'
+                            ? 'GST / Forex variance'
+                            : 'Unmatched payment'}
+                        </td>
+                        <td className="py-1">
+                          <ConfidenceBar
+                            confidence={c.confidence}
+                            priorConfidence={c.prior_confidence}
+                            reason={c.confidence_reason}
+                            compact={true}
+                          />
+                        </td>
+                        <td className="py-1 text-right num text-ink-soft">
+                          ₹{c.invoice_amount.toLocaleString('en-IN')}
+                        </td>
+                        <td className="py-1 text-right num font-semibold text-ink">
+                          ₹{c.gap.toLocaleString('en-IN')}
+                        </td>
+                        <td className="py-1 pl-6">
+                          <StatusTag status={c.status} />
+                        </td>
+                        <td className="pr-5 py-1 text-right num text-ink-soft text-[12px]">
+                          {c.age}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* Document Ingestion Modal */}
+      <DocumentIngestModal
+        isOpen={isIngestModalOpen}
+        onClose={() => setIsIngestModalOpen(false)}
+      />
     </div>
   );
 };

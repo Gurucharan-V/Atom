@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Download, ShieldCheck, Filter } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { SkeletonTableRow } from '../components/common/LoadingStates';
+import { AuditReportModal } from '../components/common/AuditReportModal';
 
 export const AuditLog: React.FC = () => {
-  const { auditLogs, exportAuditReport, cases, isLoading } = useApp();
+  const { auditLogs, cases, isLoading } = useApp();
   const [caseFilter, setCaseFilter] = useState<string>('all');
   const [stepFilter, setStepFilter] = useState<string>('all');
   const [actorFilter, setActorFilter] = useState<string>('all');
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState<boolean>(false);
 
   const filteredLogs = auditLogs.filter((log) => {
     if (caseFilter !== 'all' && log.case_id !== caseFilter) return false;
@@ -17,6 +19,7 @@ export const AuditLog: React.FC = () => {
   });
 
   const uniqueCases = Array.from(new Set(cases.map((c) => c.id)));
+  const targetCase = (caseFilter !== 'all' ? cases.find((c) => c.id === caseFilter) : null) || cases[0];
 
   return (
     <div className="space-y-6">
@@ -39,11 +42,11 @@ export const AuditLog: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => exportAuditReport()}
-          className="h-[36px] px-4 rounded-control bg-ink hover:bg-ink/90 text-white font-medium text-[13px] flex items-center gap-2 transition-colors self-start sm:self-auto"
+          onClick={() => setIsAuditModalOpen(true)}
+          className="h-[36px] px-4 rounded-control bg-ink hover:bg-ink/90 text-white font-medium text-[13px] flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm"
         >
           <Download className="w-4 h-4" />
-          <span>Export audit report</span>
+          <span>Export audit PDF dossier</span>
         </button>
       </div>
 
@@ -99,22 +102,22 @@ export const AuditLog: React.FC = () => {
           <option value="system">System</option>
         </select>
 
-        <span className="ml-auto font-mono text-[12px] text-ink-soft">
+        <span className="ml-auto text-[12px] text-ink-soft font-mono">
           {filteredLogs.length} events logged
         </span>
       </div>
 
-      {/* Audit Log Table */}
+      {/* Dense Log Table */}
       <div className="bg-sheet rounded-panel border border-rule overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-rule bg-paper/50 text-[12px] font-medium text-ink-soft h-[38px]">
-                <th className="pl-5 py-2 font-medium">Timestamp</th>
-                <th className="py-2 font-medium">Case ID</th>
-                <th className="py-2 font-medium">Step</th>
-                <th className="py-2 font-medium">Actor</th>
-                <th className="pr-5 py-2 font-medium">Summary</th>
+              <tr className="border-b border-rule bg-paper/50 text-[12px] font-medium text-ink-soft h-[38px] select-none">
+                <th className="pl-5 py-2 font-medium w-[140px]">Timestamp</th>
+                <th className="py-2 font-medium w-[120px]">Case ID</th>
+                <th className="py-2 font-medium w-[110px]">Step type</th>
+                <th className="py-2 font-medium w-[160px]">Actor</th>
+                <th className="pr-5 py-2 font-medium">Summary & Justification</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-rule/60 text-[13px]">
@@ -128,24 +131,24 @@ export const AuditLog: React.FC = () => {
               ) : (
                 filteredLogs.map((log) => (
                   <tr key={log.id} className="h-[44px] hover:bg-[#F7F9FB] transition-colors">
-                  <td className="pl-5 py-1.5 font-mono text-ink-soft text-[12px] whitespace-nowrap">
-                    {log.time}
-                  </td>
-                  <td className="py-1.5 font-mono font-medium text-ink whitespace-nowrap">
-                    {log.case_id}
-                  </td>
-                  <td className="py-1.5 whitespace-nowrap">
-                    <span className="font-mono text-[11px] px-2 py-0.5 rounded-control bg-paper text-ink border border-rule">
-                      {log.step_type}
-                    </span>
-                  </td>
-                  <td className="py-1.5 whitespace-nowrap text-ink-soft">
-                    <span className="font-medium text-ink">{log.actor_name}</span>{' '}
-                    <span className="text-[11px]">({log.actor})</span>
-                  </td>
-                  <td className="pr-5 py-1.5 text-ink leading-relaxed">
-                    {log.summary}
-                  </td>
+                    <td className="pl-5 py-1.5 font-mono text-ink-soft text-[12px] whitespace-nowrap">
+                      {log.time}
+                    </td>
+                    <td className="py-1.5 font-mono font-medium text-ink whitespace-nowrap">
+                      {log.case_id}
+                    </td>
+                    <td className="py-1.5 whitespace-nowrap">
+                      <span className="font-mono text-[11px] px-2 py-0.5 rounded-control bg-paper text-ink border border-rule">
+                        {log.step_type}
+                      </span>
+                    </td>
+                    <td className="py-1.5 whitespace-nowrap text-ink-soft">
+                      <span className="font-medium text-ink">{log.actor_name}</span>{' '}
+                      <span className="text-[11px]">({log.actor})</span>
+                    </td>
+                    <td className="pr-5 py-1.5 text-ink leading-relaxed">
+                      {log.summary}
+                    </td>
                   </tr>
                 ))
               )}
@@ -153,6 +156,16 @@ export const AuditLog: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Audit PDF Export Dossier Modal (B7) */}
+      {targetCase && (
+        <AuditReportModal
+          isOpen={isAuditModalOpen}
+          onClose={() => setIsAuditModalOpen(false)}
+          targetCase={targetCase}
+          auditLogs={auditLogs}
+        />
+      )}
     </div>
   );
 };

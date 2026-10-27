@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Play, ShieldCheck, Download } from 'lucide-react';
+import { ArrowLeft, Play, ShieldCheck, Download, UploadCloud, ArrowLeftRight, Layers } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { OverlapMark } from '../components/common/OverlapMark';
 import { StatusTag } from '../components/common/StatusTag';
 import { TraceTape } from '../components/trace/TraceTape';
 import { EvidencePanel } from '../components/evidence/EvidencePanel';
+import { EvidenceDiffView } from '../components/evidence/EvidenceDiffView';
 import { RejectModal } from '../components/common/RejectModal';
+import { AuditReportModal } from '../components/common/AuditReportModal';
+import { DocumentIngestModal } from '../components/common/DocumentIngestModal';
 
 export const CaseDetail: React.FC = () => {
   const {
@@ -13,13 +16,16 @@ export const CaseDetail: React.FC = () => {
     setActiveTab,
     approveAction,
     rejectAction,
-    exportAuditReport,
+    auditLogs,
     runDemo,
     isDemoRunning,
   } = useApp();
 
   const [highlightedEvidenceId, setHighlightedEvidenceId] = useState<string | undefined>();
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [isIngestModalOpen, setIsIngestModalOpen] = useState(false);
+  const [activeView, setActiveView] = useState<'evidence' | 'diff'>('evidence');
 
   if (!selectedCase) {
     return (
@@ -40,6 +46,7 @@ export const CaseDetail: React.FC = () => {
 
   const handleSelectEvidenceFromTrace = (evidenceId: string) => {
     setHighlightedEvidenceId(evidenceId);
+    setActiveView('evidence');
     const element = document.getElementById(`evidence-${evidenceId}`);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -58,7 +65,7 @@ export const CaseDetail: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Back button & quick actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <button
           type="button"
           onClick={() => setActiveTab('cases')}
@@ -68,15 +75,27 @@ export const CaseDetail: React.FC = () => {
           <span>All cases</span>
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* F2: Ingest Document button */}
           <button
             type="button"
-            onClick={() => exportAuditReport(selectedCase.id)}
-            className="h-[34px] px-3 rounded-control bg-white border border-rule hover:bg-paper text-ink-soft text-[12px] font-medium flex items-center gap-1.5 transition-colors"
+            onClick={() => setIsIngestModalOpen(true)}
+            className="h-[34px] px-3 rounded-control bg-paper border border-rule hover:border-corona text-ink text-[12px] font-medium flex items-center gap-1.5 transition-colors shadow-sm"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export case report</span>
+            <UploadCloud className="w-3.5 h-3.5 text-corona" />
+            <span>Ingest document / audio</span>
           </button>
+
+          {/* B7: PDF Export button */}
+          <button
+            type="button"
+            onClick={() => setIsAuditModalOpen(true)}
+            className="h-[34px] px-3 rounded-control bg-white border border-rule hover:bg-paper text-ink font-medium text-[12px] flex items-center gap-1.5 transition-colors shadow-sm"
+          >
+            <Download className="w-3.5 h-3.5 text-ink-soft" />
+            <span>Export audit PDF</span>
+          </button>
+
           <button
             type="button"
             onClick={runDemo}
@@ -163,34 +182,78 @@ export const CaseDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Main 2-region content: Left Trace Tape (44%) + Right Evidence Panel (56%) */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-        {/* Left: Dark Trace Tape (~44% width) */}
-        <div className="xl:col-span-5">
-          <TraceTape
-            trace={selectedCase.trace}
-            caseId={selectedCase.id}
-            isLive={selectedCase.status === 'running' || isDemoRunning}
-            onSelectEvidence={handleSelectEvidenceFromTrace}
-          />
+      {/* View Switcher: Investigation vs Two-Pane Diff (F5) */}
+      <div className="flex items-center justify-between border-b border-rule pb-2">
+        <div className="flex items-center gap-1 bg-paper p-1 rounded-control border border-rule">
+          <button
+            type="button"
+            onClick={() => setActiveView('evidence')}
+            className={`px-3 py-1.5 rounded-control text-[12px] font-medium flex items-center gap-1.5 transition-colors ${
+              activeView === 'evidence'
+                ? 'bg-white text-ink shadow-sm font-semibold'
+                : 'text-ink-soft hover:text-ink'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Trace & Evidence Panel</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveView('diff')}
+            className={`px-3 py-1.5 rounded-control text-[12px] font-medium flex items-center gap-1.5 transition-colors ${
+              activeView === 'diff'
+                ? 'bg-white text-ink shadow-sm font-semibold'
+                : 'text-ink-soft hover:text-ink'
+            }`}
+          >
+            <ArrowLeftRight className="w-3.5 h-3.5 text-corona" />
+            <span>Two-Pane Record Diff</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">
+              3s Audit
+            </span>
+          </button>
         </div>
 
-        {/* Right: Evidence, Conclusion, and Proposed Action */}
-        <div className="xl:col-span-7">
-          <EvidencePanel
-            caseId={selectedCase.id}
-            vendorName={selectedCase.vendor}
-            evidence={selectedCase.evidence}
-            conclusion={selectedCase.conclusion}
-            confidence={selectedCase.confidence}
-            proposedAction={selectedCase.proposed_action}
-            highlightedEvidenceId={highlightedEvidenceId}
-            onApprove={handleApprove}
-            onReject={() => setIsRejectModalOpen(true)}
-            isResolved={isResolved}
-          />
-        </div>
+        <span className="text-[12px] text-ink-soft hidden sm:inline">
+          {selectedCase.evidence.length} cited records · Autonomous execution
+        </span>
       </div>
+
+      {/* Content based on Active View */}
+      {activeView === 'diff' ? (
+        <EvidenceDiffView currentCase={selectedCase} />
+      ) : (
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+          {/* Left: Dark Trace Tape (~44% width) */}
+          <div className="xl:col-span-5">
+            <TraceTape
+              trace={selectedCase.trace}
+              caseId={selectedCase.id}
+              isLive={selectedCase.status === 'running' || isDemoRunning}
+              onSelectEvidence={handleSelectEvidenceFromTrace}
+            />
+          </div>
+
+          {/* Right: Evidence, Conclusion, and Proposed Action */}
+          <div className="xl:col-span-7">
+            <EvidencePanel
+              caseId={selectedCase.id}
+              vendorName={selectedCase.vendor}
+              evidence={selectedCase.evidence}
+              conclusion={selectedCase.conclusion}
+              confidence={selectedCase.confidence}
+              priorConfidence={selectedCase.prior_confidence}
+              confidenceReason={selectedCase.confidence_reason}
+              proposedAction={selectedCase.proposed_action}
+              highlightedEvidenceId={highlightedEvidenceId}
+              onApprove={handleApprove}
+              onReject={() => setIsRejectModalOpen(true)}
+              isResolved={isResolved}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Reject with comment modal */}
       <RejectModal
@@ -198,6 +261,21 @@ export const CaseDetail: React.FC = () => {
         caseId={selectedCase.id}
         onClose={() => setIsRejectModalOpen(false)}
         onSubmit={handleRejectSubmit}
+      />
+
+      {/* Audit PDF Export Dossier Modal (B7) */}
+      <AuditReportModal
+        isOpen={isAuditModalOpen}
+        onClose={() => setIsAuditModalOpen(false)}
+        targetCase={selectedCase}
+        auditLogs={auditLogs}
+      />
+
+      {/* Document Ingestion Modal (F2) */}
+      <DocumentIngestModal
+        isOpen={isIngestModalOpen}
+        onClose={() => setIsIngestModalOpen(false)}
+        targetCaseId={selectedCase.id}
       />
     </div>
   );

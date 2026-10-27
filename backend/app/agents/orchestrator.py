@@ -12,6 +12,8 @@ from ..models.models import TraceEvent, Case
 from ..tools.email_search_tool import search_emails
 from ..tools.bank_tool import query_bank_statements
 from ..tools.ledger_tool import query_ledger
+from ..tools.call_transcript_tool import search_call_transcripts
+from ..matching.rules import explain_variance
 from ..policy.autonomy_policy import evaluate_autonomy_policy
 
 async def run_investigation_loop(case: Case) -> AsyncGenerator[TraceEvent, None]:
@@ -37,25 +39,45 @@ async def run_investigation_loop(case: Case) -> AsyncGenerator[TraceEvent, None]
         case_id=case.id,
         step="plan",
         state="done",
-        summary=f"Formulated investigation plan: scan correspondence, query bank clearing narration, and evaluate against ERP ledger.",
+        summary=f"Formulated investigation plan: scan correspondence, audio phone call transcripts, bank clearing, and GST/forex variance rules.",
         payload={
             "steps": [
-                "1. Search email communication for split payment or discount approval",
-                "2. Fetch bank transaction narration and remittance tokens",
-                "3. Check ERP purchase order payment clauses",
-                "4. Classify discrepancy and recommend action"
+                "1. Search phone call recordings & audio transcripts for verbal agreements",
+                "2. Search email archives for remittance advice or credit note clauses",
+                "3. Fetch bank transaction narration and remittance tokens",
+                "4. Check GST slab (5%, 12%, 18%, 28%) and forex spread (±2%) rules",
+                "5. Classify discrepancy and recommend action"
             ]
         },
         evidence_refs=[],
         ts=now_fn()
     )
     yield plan_event
-    await asyncio.sleep(0.6)
+    await asyncio.sleep(0.5)
 
-    # 3. TOOL USE: Email search
+    # 3. TOOL USE: Call Transcript Search (Multimodal Audio Intelligence)
+    call_res = search_call_transcripts(case.vendor or case.id)
+    if call_res.data.get("hits", 0) > 0:
+        hit = call_res.data["results"][0]
+        call_event = TraceEvent(
+            id=f"tr-{case.id}-3a",
+            case_id=case.id,
+            step="tool_use",
+            state="done",
+            tool_name="call_transcript_tool",
+            duration_ms=call_res.duration_ms,
+            summary=f"Searched audio call index: found recording {hit['call_id']} ({hit['duration_text']}) with verbal agreement by {hit['matching_turns'][0]['speaker']}.",
+            payload={"audio_id": hit["call_id"], "snippet": hit["primary_snippet"], "timestamp": hit["matching_turns"][0]["timestamp"]},
+            evidence_refs=[ev.id for ev in case.evidence if ev.source_type == "call"] or ["ev-4"],
+            ts=now_fn()
+        )
+        yield call_event
+        await asyncio.sleep(0.4)
+
+    # 4. TOOL USE: Email search
     email_res = search_emails(case.vendor)
     email_event = TraceEvent(
-        id=f"tr-{case.id}-3",
+        id=f"tr-{case.id}-3b",
         case_id=case.id,
         step="tool_use",
         state="done",
@@ -67,9 +89,9 @@ async def run_investigation_loop(case: Case) -> AsyncGenerator[TraceEvent, None]
         ts=now_fn()
     )
     yield email_event
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.4)
 
-    # 4. TOOL USE: Bank tool
+    # 5. TOOL USE: Bank tool
     bank_res = query_bank_statements(case.id)
     bank_event = TraceEvent(
         id=f"tr-{case.id}-4",
@@ -84,16 +106,38 @@ async def run_investigation_loop(case: Case) -> AsyncGenerator[TraceEvent, None]
         ts=now_fn()
     )
     yield bank_event
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.4)
 
-    # 5. DECISION STEP
+    # 6. MATCHING RULE CHECK: GST & Forex Variance Auto-Explainer (B6)
+    variance_explanation = explain_variance(case.invoice_amount, case.paid_amount, case.currency)
+    if variance_explanation:
+        variance_event = TraceEvent(
+            id=f"tr-{case.id}-4b",
+            case_id=case.id,
+            step="tool_use",
+            state="done",
+            tool_name="matching_rules_engine",
+            duration_ms=60,
+            summary=f"Tax & Forex Rule Match: {variance_explanation['explanation']}",
+            payload=variance_explanation,
+            evidence_refs=[ev.id for ev in case.evidence if ev.source_type == "invoice"],
+            ts=now_fn()
+        )
+        yield variance_event
+        await asyncio.sleep(0.4)
+
+    # 7. DECISION STEP
+    decision_summary = f"Classified discrepancy as {case.mismatch_type.replace('_', ' ')} (Confidence {case.confidence:.2f})."
+    if case.prior_confidence and case.confidence > case.prior_confidence:
+        decision_summary += f" Confidence increased from {case.prior_confidence:.2f} -> {case.confidence:.2f} with multimodal corroboration."
+
     decision_event = TraceEvent(
         id=f"tr-{case.id}-5",
         case_id=case.id,
         step="decision",
         state="done",
-        summary=f"Classified discrepancy as {case.mismatch_type.replace('_', ' ')} (Confidence {case.confidence:.2f}).",
-        payload={"mismatch_type": case.mismatch_type, "confidence": case.confidence},
+        summary=decision_summary,
+        payload={"mismatch_type": case.mismatch_type, "confidence": case.confidence, "prior_confidence": case.prior_confidence},
         evidence_refs=[ev.id for ev in case.evidence],
         ts=now_fn()
     )

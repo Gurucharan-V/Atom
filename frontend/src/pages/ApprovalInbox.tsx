@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { ShieldCheck, XCircle, ExternalLink, Inbox } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShieldCheck, XCircle, ExternalLink, Inbox, Keyboard } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { OverlapMark } from '../components/common/OverlapMark';
 import { RejectModal } from '../components/common/RejectModal';
 
 export const ApprovalInbox: React.FC = () => {
-  const { cases, selectCase, approveAction, rejectAction } = useApp();
+  const { cases, selectCase, approveAction, rejectAction, setActiveTab, addToast } = useApp();
 
   const pendingCases = cases.filter(
     (c) => c.status === 'awaiting_approval' && c.proposed_action?.status === 'pending'
@@ -18,13 +18,85 @@ export const ApprovalInbox: React.FC = () => {
 
   const currentCase = pendingCases.find((c) => c.id === activeCaseId) || pendingCases[0];
 
+  // Keyboard navigation handler (F7)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is currently typing inside an input, textarea, or if modal is open
+      const target = e.target as HTMLElement;
+      if (
+        rejectingCaseId ||
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (pendingCases.length === 0) return;
+
+      const currentIndex = pendingCases.findIndex((c) => c.id === (currentCase?.id || activeCaseId));
+
+      switch (e.key.toLowerCase()) {
+        case 'a': {
+          e.preventDefault();
+          if (currentCase) {
+            handleApprove(currentCase.id);
+            addToast(`Approved ${currentCase.id} via shortcut [A]`, 'verified');
+          }
+          break;
+        }
+        case 'r': {
+          e.preventDefault();
+          if (currentCase) {
+            setRejectingCaseId(currentCase.id);
+          }
+          break;
+        }
+        case 'j':
+        case 'arrowdown': {
+          e.preventDefault();
+          const nextIndex = (currentIndex + 1) % pendingCases.length;
+          setActiveCaseId(pendingCases[nextIndex].id);
+          break;
+        }
+        case 'k':
+        case 'arrowup': {
+          e.preventDefault();
+          const prevIndex = (currentIndex - 1 + pendingCases.length) % pendingCases.length;
+          setActiveCaseId(pendingCases[prevIndex].id);
+          break;
+        }
+        case 'enter': {
+          e.preventDefault();
+          if (currentCase) {
+            selectCase(currentCase.id);
+            setActiveTab('case_detail');
+          }
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [pendingCases, activeCaseId, currentCase, rejectingCaseId, selectCase, setActiveTab, addToast]);
+
   const handleApprove = (id: string) => {
     approveAction(id);
+    // Auto-advance to next pending item if available
+    const remaining = pendingCases.filter((c) => c.id !== id);
+    if (remaining.length > 0) {
+      setActiveCaseId(remaining[0].id);
+    }
   };
 
   const handleRejectConfirm = (reason: string) => {
     if (rejectingCaseId) {
       rejectAction(rejectingCaseId, reason);
+      const remaining = pendingCases.filter((c) => c.id !== rejectingCaseId);
+      if (remaining.length > 0) {
+        setActiveCaseId(remaining[0].id);
+      }
       setRejectingCaseId(null);
     }
   };
@@ -47,7 +119,8 @@ export const ApprovalInbox: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header and Keyboard Legend */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-[24px] font-bold text-ink tracking-tight">
             Pending approvals
@@ -56,29 +129,51 @@ export const ApprovalInbox: React.FC = () => {
             Autonomous policy guardrails require human sign-off for consequential ledger writes and disbursements.
           </p>
         </div>
-        <span className="font-mono text-[13px] text-ink font-semibold bg-pending/10 text-pending px-3 py-1 rounded-control border border-pending/30">
-          {pendingCases.length} items awaiting review
-        </span>
+
+        {/* Keyboard Shortcuts Legend Banner (F7) */}
+        <div className="flex items-center gap-2 bg-paper px-3 py-1.5 rounded-control border border-rule text-[12px] text-ink-soft shadow-sm">
+          <Keyboard className="w-4 h-4 text-corona" />
+          <span className="font-semibold text-ink">Shortcuts:</span>
+          <span className="inline-flex items-center gap-1 font-mono bg-white px-1.5 py-0.5 rounded border border-rule text-ink font-bold text-[11px]">
+            A
+          </span>
+          <span>Approve</span>
+          <span className="inline-flex items-center gap-1 font-mono bg-white px-1.5 py-0.5 rounded border border-rule text-ink font-bold text-[11px]">
+            R
+          </span>
+          <span>Reject</span>
+          <span className="inline-flex items-center gap-1 font-mono bg-white px-1.5 py-0.5 rounded border border-rule text-ink font-bold text-[11px]">
+            J / K
+          </span>
+          <span>Navigate</span>
+          <span className="inline-flex items-center gap-1 font-mono bg-white px-1.5 py-0.5 rounded border border-rule text-ink font-bold text-[11px]">
+            ↵
+          </span>
+          <span>Detail</span>
+        </div>
       </div>
 
       {/* Two-pane layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left pane: Approval items list */}
         <div className="lg:col-span-5 bg-sheet rounded-panel border border-rule overflow-hidden divide-y divide-rule/70">
-          <div className="p-3 bg-paper/60 text-[12px] font-medium text-ink-soft">
-            Pending action queue
+          <div className="p-3 bg-paper/60 text-[12px] font-medium text-ink-soft flex items-center justify-between">
+            <span>Pending action queue ({pendingCases.length})</span>
+            <span className="text-[11px] font-mono text-ink-soft">Use J / K to move</span>
           </div>
 
           <div className="divide-y divide-rule/60 max-h-[600px] overflow-y-auto">
-            {pendingCases.map((c) => {
+            {pendingCases.map((c, idx) => {
               const isSelected = currentCase?.id === c.id;
 
               return (
                 <div
                   key={c.id}
                   onClick={() => setActiveCaseId(c.id)}
-                  className={`p-4 cursor-pointer transition-colors ${
-                    isSelected ? 'bg-[#F2F5F9] border-l-4 border-l-ink' : 'hover:bg-[#F7F9FB]'
+                  className={`p-4 cursor-pointer transition-colors relative ${
+                    isSelected
+                      ? 'bg-amber-500/[0.08] border-l-4 border-l-corona ring-1 ring-corona/30'
+                      : 'hover:bg-[#F7F9FB]'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3 mb-1.5">
@@ -87,6 +182,11 @@ export const ApprovalInbox: React.FC = () => {
                       <span className="font-mono text-[13px] font-bold text-ink">
                         {c.id}
                       </span>
+                      {isSelected && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-ink text-white font-mono">
+                          ACTIVE [#{idx + 1}]
+                        </span>
+                      )}
                     </div>
                     <span className="num font-bold text-ink text-[14px]">
                       ₹{c.gap.toLocaleString('en-IN')}
@@ -129,11 +229,18 @@ export const ApprovalInbox: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => selectCase(currentCase.id)}
+                  onClick={() => {
+                    selectCase(currentCase.id);
+                    setActiveTab('case_detail');
+                  }}
                   className="h-[34px] px-3 rounded-control border border-rule bg-white hover:bg-paper text-ink font-medium text-[12px] flex items-center gap-1.5 transition-colors"
+                  title="Press [Enter] to open"
                 >
                   <span>Open full case</span>
                   <ExternalLink className="w-3.5 h-3.5" />
+                  <span className="font-mono text-[10px] bg-paper px-1 py-0.5 rounded border border-rule text-ink-soft">
+                    ↵
+                  </span>
                 </button>
               </div>
 
@@ -170,19 +277,30 @@ export const ApprovalInbox: React.FC = () => {
                   </div>
                 )}
 
-                {/* Evidence summary */}
+                {/* Evidence summary with Voice Call / WhatsApp callouts */}
                 <div className="pt-2">
-                  <span className="text-[12px] font-semibold text-ink block mb-2">
-                    Evidence summary ({currentCase.evidence.length} sources)
-                  </span>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[12px] font-semibold text-ink">
+                      Evidence summary ({currentCase.evidence.length} sources)
+                    </span>
+                    <span className="text-[11px] text-ink-soft">
+                      Confidence: {(currentCase.confidence * 100).toFixed(0)}%
+                    </span>
+                  </div>
                   <div className="space-y-2">
                     {currentCase.evidence.map((ev) => (
                       <div
                         key={ev.id}
-                        className="p-2.5 bg-paper/40 rounded-control border border-rule text-[12px]"
+                        className={`p-2.5 rounded-control border text-[12px] ${
+                          ev.source_type === 'call'
+                            ? 'bg-indigo-50/40 border-indigo-200'
+                            : ev.source_type === 'whatsapp'
+                            ? 'bg-emerald-50/40 border-emerald-200'
+                            : 'bg-paper/40 border-rule'
+                        }`}
                       >
                         <div className="flex items-center justify-between text-ink-soft mb-1 font-mono text-[11px]">
-                          <span>{ev.ref_id}</span>
+                          <span className="font-semibold text-ink">{ev.ref_id}</span>
                           <span>{ev.title}</span>
                         </div>
                         <p className="text-ink font-normal">{ev.snippet}</p>
@@ -191,25 +309,37 @@ export const ApprovalInbox: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Decision controls */}
-                <div className="pt-4 border-t border-rule flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleApprove(currentCase.id)}
-                    className="h-[38px] px-5 rounded-control bg-verified hover:bg-verified/90 text-white font-medium text-[14px] flex items-center gap-2 transition-colors focus:ring-2 focus:ring-pending focus:ring-offset-2 outline-none"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Approve</span>
-                  </button>
+                {/* Decision controls with keyboard badges */}
+                <div className="pt-4 border-t border-rule flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleApprove(currentCase.id)}
+                      className="h-[38px] px-5 rounded-control bg-verified hover:bg-verified/90 text-white font-medium text-[14px] flex items-center gap-2 transition-colors shadow-sm"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Approve</span>
+                      <span className="font-mono text-[11px] bg-white/20 px-1.5 py-0.5 rounded font-bold">
+                        A
+                      </span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setRejectingCaseId(currentCase.id)}
-                    className="h-[38px] px-4 rounded-control bg-white hover:bg-escalated/5 border border-escalated text-escalated font-medium text-[14px] flex items-center gap-2 transition-colors focus:ring-2 focus:ring-pending focus:ring-offset-2 outline-none"
-                  >
-                    <XCircle className="w-4 h-4" />
-                    <span>Reject</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setRejectingCaseId(currentCase.id)}
+                      className="h-[38px] px-4 rounded-control bg-white hover:bg-escalated/5 border border-escalated text-escalated font-medium text-[14px] flex items-center gap-2 transition-colors"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      <span>Reject</span>
+                      <span className="font-mono text-[11px] bg-escalated/10 px-1.5 py-0.5 rounded font-bold">
+                        R
+                      </span>
+                    </button>
+                  </div>
+
+                  <span className="text-[12px] text-ink-soft hidden sm:inline">
+                    Press <kbd className="px-1.5 py-0.5 bg-paper rounded border border-rule font-mono font-bold text-[11px]">A</kbd> to approve, <kbd className="px-1.5 py-0.5 bg-paper rounded border border-rule font-mono font-bold text-[11px]">R</kbd> to reject
+                  </span>
                 </div>
               </div>
             </>
