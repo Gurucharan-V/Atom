@@ -1,5 +1,5 @@
 """
-Eclipse Agent Orchestrator
+Atom Agent Orchestrator
 Executes the autonomous loop per case:
 INPUT -> PLAN -> TOOL USE -> DECISION -> ACTION -> VERIFICATION
 (with RECOVER / ESCALATE branches)

@@ -1,5 +1,5 @@
 """
-Eclipse Reconciler Backend - In-Memory / Seed Data Store
+Atom Reconciler Backend - In-Memory / Seed Data Store
 Stores cases with multimodal evidence (Invoices, Bank rows, Emails, Call Transcripts, WhatsApp),
 confidence evolution history, and raw source vs matched records for Two-Pane Diff.
 """

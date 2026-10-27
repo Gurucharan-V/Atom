@@ -14,7 +14,7 @@ def generate_case_report(case_data: Dict[str, Any]) -> str:
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Eclipse Reconciliation Audit Report - {case_id}</title>
+  <title>Atom Reconciliation Audit Report - {case_id}</title>
   <style>
     body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #16202C; }}
     h1 {{ border-bottom: 2px solid #D9DEE5; padding-bottom: 12px; }}
@@ -23,7 +23,7 @@ def generate_case_report(case_data: Dict[str, Any]) -> str:
   </style>
 </head>
 <body>
-  <h1>Reconciliation Audit Report: {case_id}</h1>
+  <h1>Atom Reconciliation Audit Report: {case_id}</h1>
   <p><strong>Vendor:</strong> {vendor}</p>
   <p><strong>Status:</strong> <span class="badge">{status}</span></p>
   <p><strong>Unreconciled Variance:</strong> ₹{gap:,.2f}</p>

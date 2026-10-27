@@ -1,6 +1,4 @@
-# Atom
-
-# 🌒 Eclipse Reconciler
+# ⚛️ Atom Reconciler
 
 > **Autonomous Resolution of Cross-System Transaction Mismatches**  
 > *Built for the Project Eclipse Hackathon (Genie X Hub / Genie Hive)*
@@ -17,7 +15,7 @@
 
 Financial reconciliation across mismatched systems (invoices, spreadsheets, bank statements, emails, and legacy ERPs) is traditionally manual, error-prone, and time-consuming. 
 
-**Eclipse Reconciler** is a full-stack, autonomous AI agent that ingests multi-source transactional data, resolves discrepancies using fuzzy entity matching and RAG-based context retrieval, enforces safety policy thresholds requiring human approval for high-risk actions, and maintains an immutable, auditable execution trail.
+**Atom Reconciler** is a full-stack, autonomous AI agent that ingests multi-source transactional data, resolves discrepancies using fuzzy entity matching and RAG-based context retrieval, enforces safety policy thresholds requiring human approval for high-risk actions, and maintains an immutable, auditable execution trail.
 
 ---
 
@@ -61,8 +59,8 @@ Financial reconciliation across mismatched systems (invoices, spreadsheets, bank
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/eclipse-reconciler.git
-cd eclipse-reconciler
+git clone https://github.com/Gurucharan-V/Atom.git
+cd Atom
 
 # 2. Configure environment variables
 cp .env.example .env

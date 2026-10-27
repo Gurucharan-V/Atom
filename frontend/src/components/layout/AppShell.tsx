@@ -55,13 +55,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <div
           onClick={() => setActiveTab('dashboard')}
           className="cursor-pointer mb-6 flex flex-col items-center gap-1 group"
-          title="Eclipse Reconciler"
+          title="Atom Reconciler"
         >
           <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 group-hover:bg-white/15 transition-colors">
             <OverlapMark size={24} gapAmount={40000} isResolved={false} />
           </div>
           <span className="font-mono text-[10px] text-white/70 tracking-wider">
-            ECLIPSE
+            ATOM
           </span>
         </div>
 
@@ -121,7 +121,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <header className="h-[60px] glass-header bg-paper/95 border-b border-rule/80 px-6 flex items-center justify-between sticky top-0 z-30 transition-all">
           <div className="flex items-center gap-3">
             <span className="font-bold text-[18px] text-ink tracking-tight font-ui flex items-center gap-2">
-              Eclipse Reconciler
+              Atom Reconciler
               <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-ink/5 border border-ink/10 text-ink-soft">v1.0</span>
             </span>
             <span className="text-ink-soft text-[13px] hidden sm:inline border-l border-rule pl-3">

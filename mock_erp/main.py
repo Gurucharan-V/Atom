@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import datetime
 
-app = FastAPI(title="Eclipse Mock ERP", version="1.0.0")
+app = FastAPI(title="Atom Mock ERP", version="1.0.0")
 
 # In-memory storage for idempotency & state
 processed_idempotency_keys: Dict[str, Dict[str, Any]] = {}

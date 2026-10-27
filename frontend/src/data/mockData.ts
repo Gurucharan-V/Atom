@@ -708,7 +708,7 @@ export const INITIAL_AUDIT_LOGS: AuditRecord[] = [
     case_id: 'INV-20418',
     step_type: 'action',
     actor: 'agent',
-    actor_name: 'Eclipse Agent',
+    actor_name: 'Atom Agent',
     summary: 'Proposed follow-up schedule for ₹40,000 on 3 Oct (Awaiting Human Approval).',
   },
   {

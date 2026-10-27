@@ -1,5 +1,5 @@
 /**
- * Eclipse Reconciler - Standalone Node.js Backend API Server
+ * Atom Reconciler - Standalone Node.js Backend API Server
  * Zero-dependency native HTTP server providing full API parity with FastAPI.
  */
 import http from 'http';
@@ -211,7 +211,7 @@ let auditLogs = [
     case_id: 'INV-20418',
     step_type: 'action',
     actor: 'agent',
-    actor_name: 'Eclipse Agent',
+    actor_name: 'Atom Agent',
     summary: 'Proposed follow-up schedule for ₹40,000 on 3 Oct (Awaiting Human Approval).'
   },
   {
@@ -254,7 +254,7 @@ const server = http.createServer((req, res) => {
   if (pathname === '/health' && req.method === 'GET') {
     return sendJson(res, 200, {
       status: 'healthy',
-      service: 'eclipse-backend-api',
+      service: 'atom-backend-api',
       port: PORT,
       timestamp: new Date().toISOString()
     });
@@ -449,5 +449,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Eclipse Reconciler Backend Server listening on http://127.0.0.1:${PORT}`);
+  console.log(`Atom Reconciler Backend Server listening on http://127.0.0.1:${PORT}`);
 });

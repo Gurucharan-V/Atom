@@ -297,7 +297,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const demoCaseId = 'INV-20418';
     setSelectedCaseId(demoCaseId);
     setActiveTab('case_detail');
-    addToast('Running Eclipse Reconciler demo scenario...', 'info');
+    addToast('Running Atom demo scenario...', 'info');
 
     let receivedEvents = 0;
     const disconnectSse = connectCaseTraceSse(
@@ -446,7 +446,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     downloadAnchor.setAttribute('href', jsonStr);
     downloadAnchor.setAttribute(
       'download',
-      `eclipse_reconciliation_audit_${caseId || 'all'}_${Date.now()}.json`
+      `atom_reconciliation_audit_${caseId || 'all'}_${Date.now()}.json`
     );
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();

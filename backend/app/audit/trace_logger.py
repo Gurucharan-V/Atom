@@ -22,7 +22,7 @@ def log_trace_step(case_id: str, event: TraceEvent) -> None:
             case_id=case_id,
             step_type=event.step,
             actor="agent",
-            actor_name="Eclipse Agent",
+            actor_name="Atom Agent",
             summary=event.summary
         ))
 

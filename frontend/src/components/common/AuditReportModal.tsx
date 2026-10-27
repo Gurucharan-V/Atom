@@ -58,7 +58,7 @@ export const AuditReportModal: React.FC<AuditReportModalProps> = ({
         <body>
           <div class="header">
             <div>
-              <h1 class="title">ECLIPSE RECONCILER · STATUTORY AUDIT REPORT</h1>
+              <h1 class="title">ATOM RECONCILER · STATUTORY AUDIT REPORT</h1>
               <div class="subtitle">Autonomous Cross-System Transaction Integrity Dossier · Case ${targetCase.id}</div>
             </div>
             <div style="text-align: right; font-family: monospace; font-size: 12px;">
@@ -152,7 +152,7 @@ export const AuditReportModal: React.FC<AuditReportModalProps> = ({
           </div>
 
           <div class="footer">
-            Eclipse Reconciler · Verified Agentic Audit Trail · SHA-256 Checksum: ${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}
+            Atom Reconciler · Verified Agentic Audit Trail · SHA-256 Checksum: ${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}
           </div>
         </body>
       </html>
@@ -210,7 +210,7 @@ export const AuditReportModal: React.FC<AuditReportModalProps> = ({
           <div className="p-4 bg-paper rounded-panel border border-rule flex items-start justify-between">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-ink-soft block">
-                Eclipse Reconciler Compliance Certificate
+                Atom Reconciler Compliance Certificate
               </span>
               <h3 className="text-[18px] font-bold text-ink mt-0.5">
                 {targetCase.id} · {targetCase.vendor}

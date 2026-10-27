@@ -1,5 +1,5 @@
 """
-Eclipse Reconciler Backend - FastAPI Application
+Atom Reconciler Backend - FastAPI Application
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,7 +11,7 @@ from .api.routes_audit import router as audit_router
 from .api.routes_ingest import router as ingest_router
 
 app = FastAPI(
-    title="Eclipse Reconciler API",
+    title="Atom Reconciler API",
     description="Autonomous Resolution of Cross-System Transaction Mismatches",
     version="1.0.0"
 )
