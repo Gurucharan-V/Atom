@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, AlertCircle } from 'lucide-react';
 
 interface RejectModalProps {
@@ -30,9 +31,9 @@ export const RejectModal: React.FC<RejectModalProps> = ({
     setError(false);
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/60 backdrop-blur-md p-4 animate-in fade-in duration-200"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -109,6 +110,7 @@ export const RejectModal: React.FC<RejectModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

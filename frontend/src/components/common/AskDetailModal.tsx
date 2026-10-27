@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Send, CheckCircle2 } from 'lucide-react';
 
 interface AskDetailModalProps {
@@ -33,9 +34,9 @@ export const AskDetailModal: React.FC<AskDetailModalProps> = ({
     }, 1200);
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/60 backdrop-blur-md p-4 animate-in fade-in duration-200"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -105,6 +106,7 @@ export const AskDetailModal: React.FC<AskDetailModalProps> = ({
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

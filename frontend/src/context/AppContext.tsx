@@ -131,10 +131,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const targetCase = cases.find((c) => c.id === caseId);
     const actionTitle = targetCase?.proposed_action?.title || 'Action';
 
-    // 1. Call backend API
-    const apiResult = await approveActionApi(caseId);
-    if (!apiResult.success && apiResult.error) {
-      addToast(apiResult.error + ' (applied locally as fallback)', 'error');
+    // 1. Sync with backend API if live
+    if (isBackendConnected) {
+      try {
+        const apiResult = await approveActionApi(caseId);
+        if (!apiResult.success) {
+          console.warn('Backend approval sync notice:', apiResult.error);
+        }
+      } catch (err) {
+        console.warn('Backend approval sync failed, applied locally:', err);
+      }
     }
 
     // 2. Optimistic UI update
@@ -188,9 +194,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const rejectAction = async (caseId: string, reason: string) => {
-    const apiResult = await rejectActionApi(caseId, reason);
-    if (!apiResult.success && apiResult.error) {
-      addToast(apiResult.error + ' (applied locally as fallback)', 'error');
+    if (isBackendConnected) {
+      try {
+        const apiResult = await rejectActionApi(caseId, reason);
+        if (!apiResult.success) {
+          console.warn('Backend rejection sync notice:', apiResult.error);
+        }
+      } catch (err) {
+        console.warn('Backend rejection sync failed, applied locally:', err);
+      }
     }
 
     setCases((prev) =>

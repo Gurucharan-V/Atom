@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Printer, FileText } from 'lucide-react';
 import type { Case, AuditRecord } from '../../types';
 
@@ -165,9 +166,17 @@ export const AuditReportModal: React.FC<AuditReportModalProps> = ({
     }, 500);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-sheet rounded-panel border border-rule shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/60 backdrop-blur-md animate-in fade-in duration-200"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-sheet rounded-panel border border-rule shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-rule bg-paper">
           <div>
@@ -299,6 +308,7 @@ export const AuditReportModal: React.FC<AuditReportModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

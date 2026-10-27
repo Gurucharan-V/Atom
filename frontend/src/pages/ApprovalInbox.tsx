@@ -41,7 +41,6 @@ export const ApprovalInbox: React.FC = () => {
           e.preventDefault();
           if (currentCase) {
             handleApprove(currentCase.id);
-            addToast(`Approved ${currentCase.id} via shortcut [A]`, 'verified');
           }
           break;
         }
